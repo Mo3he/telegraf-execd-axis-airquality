@@ -47,9 +47,12 @@ The plugin supports two collection modes:
   ## device is used.
   # sensor_id = ""
 
-  ## Categories to collect. Defaults to all numeric measurements.
+  ## Categories to collect. Defaults to the directly measured values.
   ## Supported: TEMPERATURE, HUMIDITY, CO2, NOX, PM1_0, PM2_5, PM4_0,
   ##            PM10_0, VOC, AQI, HEAT_INDEX, HUMIDEX
+  ## HEAT_INDEX and HUMIDEX are derived comfort indices that not all
+  ## devices/firmware emit, so they are excluded from the default list.
+  ## Add them explicitly here if your device reports them.
   # categories = ["TEMPERATURE", "HUMIDITY", "CO2", "NOX", "PM1_0", "PM2_5", "PM4_0", "PM10_0", "VOC", "AQI"]
 
   ## How far back to query history when fetching the latest measurement.
