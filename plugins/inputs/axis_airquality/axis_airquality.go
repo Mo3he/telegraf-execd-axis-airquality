@@ -1,4 +1,3 @@
-//go:generate go run github.com/influxdata/telegraf/tools/generate_plugindata
 package axis_airquality
 
 import (

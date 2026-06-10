@@ -9,7 +9,7 @@ The plugin supports two collection modes:
 - **`stream`** (default): subscribes to the live
   `tnsaxis:AirQualityMonitor/Metadata` event over a websocket and emits a
   metric on every update, at the device's native ~1s rate. Run it as a service
-  input (`signal = "none"`, `-poll_interval 0`).
+  input (`signal = "none"`, `-poll_interval_disabled`).
 - **`history`**: polls the REST `getHistoryData` action for each configured
   category and reports the most recent measurement. The device only stores
   history at 60s granularity, so this mode's effective resolution is ~60s
@@ -38,7 +38,7 @@ The plugin supports two collection modes:
   ## Collection mode (default "stream"):
   ##   "stream"  - subscribe to the live event websocket for real-time data
   ##               at the device's native ~1s update rate. Run this as a
-  ##               service input: signal = "none" and -poll_interval 0.
+  ##               service input: signal = "none" and -poll_interval_disabled.
   ##   "history" - poll the REST history API (max ~60s effective resolution,
   ##               since the device stores history at 60s granularity).
   # mode = "stream"

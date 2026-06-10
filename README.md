@@ -74,7 +74,7 @@ its config. The plugin has two collection modes (set via `mode` in
 The D6310 publishes every measurement once per second over an event websocket.
 In `stream` mode (the default) the plugin holds that connection open and pushes
 a metric on each update. Run it as a continuous service input with
-`signal = "none"` and `-poll_interval 0`:
+`signal = "none"` and `-poll_interval_disabled`:
 
 `plugin.conf`:
 
@@ -90,7 +90,7 @@ a metric on each update. Run it as a continuous service input with
 
 ```toml
 [[inputs.execd]]
-  command = ["/path/to/axis_airquality", "-config", "/path/to/plugin.conf", "-poll_interval", "0"]
+  command = ["/path/to/axis_airquality", "-config", "/path/to/plugin.conf", "-poll_interval_disabled"]
   signal = "none"
   data_format = "influx"
 
@@ -126,7 +126,7 @@ a websocket is undesirable. Let Telegraf drive collection via STDIN:
 
 ```toml
 [[inputs.execd]]
-  command = ["/path/to/axis_airquality", "-config", "/path/to/plugin.conf", "-poll_interval", "0"]
+  command = ["/path/to/axis_airquality", "-config", "/path/to/plugin.conf", "-poll_interval_disabled"]
   signal = "STDIN"
   interval = "60s"   # 60s matches the history storage granularity
   data_format = "influx"
@@ -146,12 +146,12 @@ pointing at its own `plugin.conf`:
 
 ```toml
 [[inputs.execd]]
-  command = ["/path/to/axis_airquality", "-config", "/etc/telegraf/d6310-lobby.conf", "-poll_interval", "0"]
+  command = ["/path/to/axis_airquality", "-config", "/etc/telegraf/d6310-lobby.conf", "-poll_interval_disabled"]
   signal = "none"
   data_format = "influx"
 
 [[inputs.execd]]
-  command = ["/path/to/axis_airquality", "-config", "/etc/telegraf/d6310-warehouse.conf", "-poll_interval", "0"]
+  command = ["/path/to/axis_airquality", "-config", "/etc/telegraf/d6310-warehouse.conf", "-poll_interval_disabled"]
   signal = "none"
   data_format = "influx"
 ```
