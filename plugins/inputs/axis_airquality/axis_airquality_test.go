@@ -112,6 +112,31 @@ func TestAllowedFields(t *testing.T) {
 	require.False(t, allowed["humidity"])
 }
 
+func TestResolveSerialUsesConfiguredValue(t *testing.T) {
+	plugin := &AxisAirQuality{Serial: "MYSERIAL123", Log: testutil.Logger{}}
+	require.Equal(t, "MYSERIAL123", plugin.resolveSerial(context.Background()))
+}
+
+func TestDeviceSerial(t *testing.T) {
+	server := digestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		require.Contains(t, r.URL.RawQuery, "Properties.System.SerialNumber")
+		_, _ = io.WriteString(w, "Properties.System.SerialNumber=E827251A7B8B\n")
+	})
+	defer server.Close()
+
+	plugin := &AxisAirQuality{
+		URL:      server.URL,
+		Username: config.NewSecret([]byte("root")),
+		Password: config.NewSecret([]byte("secret")),
+		Log:      testutil.Logger{},
+	}
+	require.NoError(t, plugin.Init())
+
+	require.Equal(t, "E827251A7B8B", plugin.resolveSerial(context.Background()))
+	// Second call is served from cache without another request.
+	require.Equal(t, "E827251A7B8B", plugin.resolveSerial(context.Background()))
+}
+
 func TestEmitEvent(t *testing.T) {
 	plugin := &AxisAirQuality{
 		Categories: []string{"TEMPERATURE", "CO2", "AQI"},
@@ -131,12 +156,13 @@ func TestEmitEvent(t *testing.T) {
 	}
 
 	var acc testutil.Accumulator
-	plugin.emitEvent(&acc, note, plugin.allowedFields(), "0", "D6310")
+	plugin.emitEvent(&acc, note, plugin.allowedFields(), "0", "D6310", "E827251AA4C6")
 
 	m, ok := acc.Get("axis_airquality")
 	require.True(t, ok)
 	require.Equal(t, "0", m.Tags["sensor_id"])
 	require.Equal(t, "D6310", m.Tags["sensor_type"])
+	require.Equal(t, "E827251AA4C6", m.Tags["serial"])
 	require.InDelta(t, 20.5, m.Fields["temperature"], 1e-9)
 	require.InDelta(t, 433.0, m.Fields["co2"], 1e-9)
 	require.InDelta(t, 1.0, m.Fields["aqi"], 1e-9)
@@ -187,7 +213,7 @@ func TestStreamOnce(t *testing.T) {
 	var acc testutil.Accumulator
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	go func() { _ = plugin.streamOnce(ctx, &acc, "0", "D6310") }()
+	go func() { _ = plugin.streamOnce(ctx, &acc, "0", "D6310", "E827251AA4C6") }()
 
 	acc.Wait(1)
 	cancel()
@@ -195,12 +221,17 @@ func TestStreamOnce(t *testing.T) {
 	m, ok := acc.Get("axis_airquality")
 	require.True(t, ok)
 	require.Equal(t, "D6310", m.Tags["sensor_type"])
+	require.Equal(t, "E827251AA4C6", m.Tags["serial"])
 	require.InDelta(t, 433.0, m.Fields["co2"], 1e-9)
 	require.InDelta(t, 20.5, m.Fields["temperature"], 1e-9)
 }
 
 func TestGather(t *testing.T) {
 	server := digestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		if strings.Contains(r.URL.Path, "param.cgi") {
+			_, _ = io.WriteString(w, "Properties.System.SerialNumber=E827251AA4C6\n")
+			return
+		}
 		w.Header().Set("Content-Type", "application/json")
 		switch {
 		case strings.HasSuffix(r.URL.Path, "/sensors"):
@@ -251,6 +282,7 @@ func TestGather(t *testing.T) {
 
 	require.Equal(t, "0", m.Tags["sensor_id"])
 	require.Equal(t, "D6310", m.Tags["sensor_type"])
+	require.Equal(t, "E827251AA4C6", m.Tags["serial"])
 	require.InDelta(t, 1.5, m.Fields["temperature"], 1e-9)
 	require.InDelta(t, 429.0, m.Fields["co2"], 1e-9)
 	require.Equal(t, true, m.Fields["connected"])

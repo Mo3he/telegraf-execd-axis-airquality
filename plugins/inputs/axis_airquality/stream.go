@@ -55,13 +55,16 @@ func (a *AxisAirQuality) streamLoop(ctx context.Context, acc telegraf.Accumulato
 		sensorType = sensor.Type
 	}
 
+	// Resolve the device serial once for the stable `serial` tag.
+	serial := a.resolveSerial(ctx)
+
 	backoff := streamReconnectMin
 	for {
 		if ctx.Err() != nil {
 			return
 		}
 
-		err := a.streamOnce(ctx, acc, sensorID, sensorType)
+		err := a.streamOnce(ctx, acc, sensorID, sensorType, serial)
 		if ctx.Err() != nil {
 			return
 		}
@@ -86,7 +89,7 @@ func (a *AxisAirQuality) streamLoop(ctx context.Context, acc telegraf.Accumulato
 
 // streamOnce establishes a single websocket connection, subscribes, and reads
 // notifications until an error or context cancellation.
-func (a *AxisAirQuality) streamOnce(ctx context.Context, acc telegraf.Accumulator, sensorID, sensorType string) error {
+func (a *AxisAirQuality) streamOnce(ctx context.Context, acc telegraf.Accumulator, sensorID, sensorType, serial string) error {
 	conn, err := a.dialEventStream(ctx)
 	if err != nil {
 		return err
@@ -131,7 +134,7 @@ func (a *AxisAirQuality) streamOnce(ctx context.Context, acc telegraf.Accumulato
 			continue
 		}
 
-		a.emitEvent(acc, note, allowed, sensorID, sensorType)
+		a.emitEvent(acc, note, allowed, sensorID, sensorType, serial)
 	}
 }
 
@@ -139,7 +142,7 @@ func (a *AxisAirQuality) emitEvent(
 	acc telegraf.Accumulator,
 	note wsNotification,
 	allowed map[string]bool,
-	sensorID, sensorType string,
+	sensorID, sensorType, serial string,
 ) {
 	data := note.Params.Notification.Message.Data
 	fields := make(map[string]interface{}, len(data))
@@ -169,6 +172,9 @@ func (a *AxisAirQuality) emitEvent(
 		tags["sensor_type"] = name
 	} else if sensorType != "" {
 		tags["sensor_type"] = sensorType
+	}
+	if serial != "" {
+		tags["serial"] = serial
 	}
 
 	ts := time.Now()

@@ -27,6 +27,7 @@ const (
 	defaultTimeout  = config.Duration(10 * time.Second)
 
 	sensorsPath = "/config/rest/airqualitymonitor/v1beta/sensors"
+	serialPath  = "/axis-cgi/param.cgi?action=list&group=Properties.System.SerialNumber"
 
 	modeHistory = "history"
 	modeStream  = "stream"
@@ -80,6 +81,7 @@ type AxisAirQuality struct {
 	Password   config.Secret   `toml:"password"`
 	Mode       string          `toml:"mode"`
 	SensorID   string          `toml:"sensor_id"`
+	Serial     string          `toml:"serial"`
 	Categories []string        `toml:"categories"`
 	Lookback   config.Duration `toml:"lookback"`
 	Timeout    config.Duration `toml:"timeout"`
@@ -90,6 +92,9 @@ type AxisAirQuality struct {
 
 	client  *http.Client
 	baseURL string
+
+	// Resolved device serial number, cached after the first successful lookup.
+	serial string
 
 	// Stored for the websocket digest handshake used by stream mode.
 	user string
@@ -281,6 +286,9 @@ func (a *AxisAirQuality) Gather(acc telegraf.Accumulator) error {
 	if sensorType != "" {
 		tags["sensor_type"] = sensorType
 	}
+	if serial := a.resolveSerial(ctx); serial != "" {
+		tags["serial"] = serial
+	}
 	fields["connected"] = connected
 
 	if latest.IsZero() {
@@ -324,6 +332,52 @@ func (a *AxisAirQuality) defaultSensor(ctx context.Context) (sensorInfo, error) 
 		SensorID:  chosen.SensorID,
 		Type:      chosen.Type,
 	}, nil
+}
+
+// resolveSerial returns the device serial number used as the stable `serial`
+// tag. A configured value takes precedence; otherwise it is fetched from the
+// device once and cached. Lookup failures are non-fatal and yield an empty
+// string so the tag is simply omitted.
+func (a *AxisAirQuality) resolveSerial(ctx context.Context) string {
+	if a.serial != "" {
+		return a.serial
+	}
+	if a.Serial != "" {
+		a.serial = a.Serial
+		return a.serial
+	}
+	serial, err := a.deviceSerial(ctx)
+	if err != nil {
+		a.Log.Debugf("serial discovery failed: %v", err)
+		return ""
+	}
+	a.serial = serial
+	return serial
+}
+
+// deviceSerial fetches the serial number from the device parameter API. The
+// response is a single `Properties.System.SerialNumber=<serial>` line.
+func (a *AxisAirQuality) deviceSerial(ctx context.Context) (string, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, a.baseURL+serialPath, nil)
+	if err != nil {
+		return "", err
+	}
+
+	body, err := a.do(req)
+	if err != nil {
+		return "", err
+	}
+
+	line := strings.TrimSpace(string(body))
+	_, value, ok := strings.Cut(line, "=")
+	if !ok {
+		return "", fmt.Errorf("unexpected serial response %q", line)
+	}
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return "", errors.New("device reported empty serial number")
+	}
+	return value, nil
 }
 
 func (a *AxisAirQuality) latestMeasurement(

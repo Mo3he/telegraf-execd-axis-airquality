@@ -47,6 +47,11 @@ The plugin supports two collection modes:
   ## device is used.
   # sensor_id = ""
 
+  ## Device serial number, added as the stable "serial" tag. When empty it is
+  ## fetched from the device automatically. Set it explicitly to override or to
+  ## avoid the lookup.
+  # serial = ""
+
   ## Categories to collect. Defaults to the directly measured values.
   ## Supported: TEMPERATURE, HUMIDITY, CO2, NOX, PM1_0, PM2_5, PM4_0,
   ##            PM10_0, VOC, AQI, HEAT_INDEX, HUMIDEX
@@ -73,6 +78,7 @@ The plugin supports two collection modes:
     - `source` (device host)
     - `sensor_id`
     - `sensor_type` (e.g. `D6310`)
+    - `serial` (device serial number; auto-discovered, stable across IP changes)
   - fields:
     - `temperature` (float, °C or °F per device scale)
     - `humidity` (float, %)
@@ -93,5 +99,5 @@ Only configured categories that return data are emitted as fields.
 ## Example Output
 
 ```text
-axis_airquality,sensor_id=0,sensor_type=D6310,source=10.0.0.10 temperature=20.5,humidity=33.7,co2=429,nox=1,pm1_0=0,pm2_5=0,pm4_0=0,pm10_0=0,voc=476,aqi=2,connected=true 1781076359000000000
+axis_airquality,sensor_id=0,sensor_type=D6310,serial=E827251AA4C6,source=10.0.0.10 temperature=20.5,humidity=33.7,co2=429,nox=1,pm1_0=0,pm2_5=0,pm4_0=0,pm10_0=0,voc=476,aqi=2,connected=true 1781076359000000000
 ```

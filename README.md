@@ -156,9 +156,11 @@ pointing at its own `plugin.conf`:
   data_format = "influx"
 ```
 
-Each device's metrics are tagged with its `source` (host) and `sensor_id`, so
-they stay distinguishable in InfluxDB. Give each device a separate `plugin.conf`
-with its own `url` and credentials.
+Each device's metrics are tagged with its `source` (host), `sensor_id`, and a
+`serial` (the device serial number, auto-discovered from the device). The
+`serial` tag stays stable even if a device's IP changes, so it is the most
+reliable way to identify a device in InfluxDB. Give each device a separate
+`plugin.conf` with its own `url` and credentials.
 
 ## Development
 
