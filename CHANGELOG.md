@@ -5,6 +5,21 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] - 2026-06-10
+
+### Added
+
+- `serial` tag carrying the device serial number, emitted in both stream and
+  history modes. It is auto-discovered from the device via `param.cgi` and
+  cached, or can be set/overridden with the new `serial` config option. Because
+  it is tied to the hardware, it stays stable across device IP changes and is
+  the most reliable way to identify a device in InfluxDB.
+
+### Tested with
+
+- Verified concurrently against two AXIS D6310 sensors (AXIS OS 12.9.57), each
+  reporting its own distinct serial.
+
 ## [0.1.0] - 2026-06-10
 
 Initial release of the `axis_airquality` Telegraf external `execd` input plugin.
@@ -29,4 +44,5 @@ Initial release of the `axis_airquality` Telegraf external `execd` input plugin.
 - **Telegraf:** v1.39.0
 - **Go:** 1.26.x (module targets Go 1.24)
 
+[0.1.1]: https://github.com/Mo3he/telegraf-execd-axis-airquality/releases/tag/v0.1.1
 [0.1.0]: https://github.com/Mo3he/telegraf-execd-axis-airquality/releases/tag/v0.1.0
