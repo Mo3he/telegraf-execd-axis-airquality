@@ -32,6 +32,8 @@ The plugin supports two collection modes:
   url = "http://10.0.0.10"
 
   ## Device credentials. Digest authentication is used automatically.
+  ## ${VAR} references are expanded from the environment, so you can keep
+  ## secrets out of the file, e.g. password = "${AXIS_PASSWORD}".
   username = "root"
   password = "secret"
 
