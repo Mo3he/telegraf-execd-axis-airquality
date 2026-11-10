@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674
-	github.com/influxdata/telegraf v1.39.0
+	github.com/influxdata/telegraf v1.40.3
 	github.com/stretchr/testify v1.11.1
 )
 
